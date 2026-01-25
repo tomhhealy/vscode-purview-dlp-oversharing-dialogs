@@ -16,6 +16,10 @@
       {
         "command": "vscode-purview-dlp-oversharing-dialogs.helloWorld",
         "title": "Hello World"
+      },
+      {
+        "command": "vscode-purview-dlp-oversharing-dialogs.createTemplate",
+        "title": "Purview DLP: Create oversharing dialog template"
       }
     ]
   },
