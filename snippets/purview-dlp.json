@@ -1,0 +1,27 @@
+{
+  "Matched Recipients List Token": {
+    "prefix": "%%MatchedRecipientsList",
+    "body": "%%MatchedConditions%%",
+    "description": "Display the matched recipients for a given DLP rule for these conditions:\n- Recipient is\n- Recipient domain is\n- Recipient is a member of\n- Content is shared from Microsoft 365"
+  },
+  "Matched Label Name Token": {
+    "prefix": "%%MatchedLabelName",
+    "body": "%%MatchedLabelName%%",
+    "description": "Inserts the name of the sensitivity label that was matched"
+  },
+  "Matched Conditions Token": {
+    "prefix": "%%MatchedConditions",
+    "body": "%%MatchedConditions%%",
+    "description": "Inserts the conditions that were matched by the DLP policy"
+  },
+  "All Tokens": {
+    "prefix": "%%tokens",
+    "body": [
+      "Available tokens:",
+      "- %%MatchedRecipientsList%%",
+      "- %%MatchedLabelName%%",
+      "- %%MatchedConditions%%"
+    ],
+    "description": "Shows all available dynamic tokens"
+  }
+}

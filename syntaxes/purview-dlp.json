@@ -1,0 +1,14 @@
+{
+  "scopeName": "source.json.purview-dlp",
+  "name": "Purview DLP JSON",
+  "patterns": [
+    {
+      "include": "source.json"
+    },
+    {
+      "name": "constant.language.purview-dlp.token",
+      "match": "%%(MatchedRecipientsList|MatchedLabelName|MatchedConditions)%%",
+      "comment": "Purview DLP dynamic tokens"
+    }
+  ]
+}

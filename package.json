@@ -21,6 +21,38 @@
         "command": "vscode-purview-dlp-oversharing-dialogs.createTemplate",
         "title": "Purview DLP: Create oversharing dialog template"
       }
+    ],
+    "languages": [
+      {
+        "id": "purview-dlp-json",
+        "aliases": [
+          "JSON - Purview DLP Oversharing Template",
+          "purview-dlp"
+        ],
+        "extensions": [
+          ".purview-dlp.json"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "purview-dlp-json",
+        "scopeName": "source.json.purview-dlp",
+        "path": "./syntaxes/purview-dlp.json"
+      }
+    ],
+    "jsonValidation": [
+      {
+        "fileMatch": "*.purview-dlp.json",
+        "url": "./schemas/purview-dlp-template.schema.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "purview-dlp-json",
+        "path": "./snippets/purview-dlp.json"
+      }
     ]
   },
   "scripts": {
