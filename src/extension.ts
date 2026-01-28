@@ -711,7 +711,7 @@ export function activate(context: vscode.ExtensionContext) {
       // Check if preview panel is open
       if (!currentPanel) {
         vscode.window.showWarningMessage(
-          "No preview panel is open. Use 'Purview DLP: Preview Dialog' first to open a preview.",
+          "No preview panel is open. Use 'Purview: Preview DLP Oversharing Dialog' first to open a preview.",
         );
         return;
       }
@@ -875,9 +875,27 @@ export function activate(context: vscode.ExtensionContext) {
       "%", // Trigger on % character
     );
 
+  // Toggle Token Auto-Completion command
+  const toggleTokenCompletionDisposable = vscode.commands.registerCommand(
+    "purview-dlp-oversharing-dialogs.toggleTokenCompletion",
+    async () => {
+      const config = vscode.workspace.getConfiguration("purviewDlp");
+      const current = config.get<boolean>("enableTokenCompletion", true);
+      await config.update(
+        "enableTokenCompletion",
+        !current,
+        vscode.ConfigurationTarget.Global,
+      );
+      vscode.window.showInformationMessage(
+        `Purview DLP token auto-completion ${!current ? "enabled" : "disabled"}.`,
+      );
+    },
+  );
+
   context.subscriptions.push(createTemplateDisposable);
   context.subscriptions.push(testDialogDisposable);
   context.subscriptions.push(switchPreviewLanguageDisposable);
+  context.subscriptions.push(toggleTokenCompletionDisposable);
   context.subscriptions.push(tokenCompletionProvider);
 }
 

@@ -12,9 +12,9 @@ A Visual Studio Code extension for creating and previewing Microsoft Purview DLP
 
 ## Commands
 
-- `Purview DLP: Create oversharing dialog template` - Create a new template with selected languages
-- `Purview DLP: Preview Dialog` - Open a live preview of the current template
-- `Purview DLP: Switch Preview Language` - Change the preview language
+- `Purview: Create oversharing dialog template` - Create a new template with selected languages
+- `Purview: Preview Dialog` - Open a live preview of the current template
+- `Purview: Switch Preview Language` - Change the preview language
 
 ## Extension Settings
 

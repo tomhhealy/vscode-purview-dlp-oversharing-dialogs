@@ -1,7 +1,7 @@
 {
   "name": "purview-dlp-oversharing-dialogs",
-  "displayName": "Purview DLP Oversharing Dialogs",
-  "description": "An open-source & lightweight Visual Studio Code extension that assists with token & text formatting in JSON templates for Microsoft Purview oversharing dialogs.",
+  "displayName": "Purview: Oversharing Dialogs",
+  "description": "An open-source & lightweight Visual Studio Code extension that assists with token & text formatting in JSON templates for Microsoft Purview's oversharing dialogs in Data Loss Prevention (DLP).",
   "version": "1.0.0",
   "publisher": "tomhhealy",
   "engines": {
@@ -16,19 +16,23 @@
     "commands": [
       {
         "command": "purview-dlp-oversharing-dialogs.createTemplate",
-        "title": "Purview DLP: Create oversharing dialog template"
+        "title": "Purview: Create oversharing dialog template"
       },
       {
         "command": "purview-dlp-oversharing-dialogs.testDialog",
-        "title": "Purview DLP: Preview Dialog"
+        "title": "Purview: Preview oversharing dialog template"
       },
       {
         "command": "purview-dlp-oversharing-dialogs.switchPreviewLanguage",
-        "title": "Purview DLP: Switch Preview Language"
+        "title": "Purview: Switch preview locale/language"
+      },
+      {
+        "command": "purview-dlp-oversharing-dialogs.toggleTokenCompletion",
+        "title": "Purview: Toggle token auto-completion"
       }
     ],
     "configuration": {
-      "title": "Purview DLP Oversharing Dialogs",
+      "title": "Purview: DLP Oversharing Dialogs",
       "properties": {
         "purviewDlp.testDialog.matchedRecipientsList": {
           "type": "string",
@@ -56,7 +60,7 @@
       {
         "id": "purview-dlp-json",
         "aliases": [
-          "JSON - Purview DLP Oversharing Template",
+          "JSON - Purview DLP Oversharing Dialog Template",
           "purview-dlp"
         ],
         "extensions": [
