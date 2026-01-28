@@ -101,7 +101,8 @@
     "pretest": "pnpm run compile && pnpm run lint",
     "lint": "eslint src",
     "test": "vscode-test",
-    "package": "vsce package -o dist/"
+    "package": "vsce package -o dist/",
+    "deploy": "vsce publish --pnpm"
   },
   "devDependencies": {
     "@types/vscode": "^1.108.1",
