@@ -366,6 +366,99 @@ function generateDialogHtml(
 </html>`;
 }
 
+// Module-level state for preview panel
+let currentPanel: vscode.WebviewPanel | undefined;
+let currentLanguage: string | undefined;
+let documentChangeListener: vscode.Disposable | undefined;
+let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+
+// Function to update webview content - defined at module level for access by multiple commands
+function updateWebview(): void {
+  if (!currentPanel) {
+    return;
+  }
+
+  const activeEditor = vscode.window.activeTextEditor;
+  if (!activeEditor) {
+    return;
+  }
+
+  let currentTemplate: PurviewDlpTemplate;
+  try {
+    currentTemplate = JSON.parse(activeEditor.document.getText());
+  } catch {
+    // Don't update on invalid JSON - keep showing last valid state
+    return;
+  }
+
+  if (
+    !currentTemplate.LocalizationData ||
+    !Array.isArray(currentTemplate.LocalizationData)
+  ) {
+    return;
+  }
+
+  // Find localization data for selected language
+  let locData = currentTemplate.LocalizationData.find(
+    (l) => l.Language === currentLanguage,
+  );
+  if (!locData) {
+    // Fall back to default language or first available
+    locData =
+      currentTemplate.LocalizationData.find(
+        (l) => l.Language === currentTemplate.DefaultLanguage,
+      ) || currentTemplate.LocalizationData[0];
+    if (locData) {
+      currentLanguage = locData.Language;
+    }
+  }
+
+  if (!locData) {
+    return;
+  }
+
+  // Get configuration values for token replacement
+  const config = vscode.workspace.getConfiguration("purviewDlp.testDialog");
+  const matchedRecipientsList = config.get<string>(
+    "matchedRecipientsList",
+    "example@example.com",
+  );
+  const matchedLabelName = config.get<string>(
+    "matchedLabelName",
+    "Confidential",
+  );
+  const matchedConditions = config.get<string>(
+    "matchedConditions",
+    "Credit Card Number detected",
+  );
+
+  // Replace tokens in title and body
+  const replaceTokens = (text: string): string => {
+    return text
+      .replace(/%%MatchedRecipientsList%%/g, matchedRecipientsList)
+      .replace(/%%MatchedLabelName%%/g, matchedLabelName)
+      .replace(/%%MatchedConditions%%/g, matchedConditions);
+  };
+
+  const title = replaceTokens(locData.Title || "");
+  const body = replaceTokens(locData.Body || "");
+  const options = locData.Options || [];
+  const hasFreeText = currentTemplate.HasFreeTextOption;
+
+  // Get language display name
+  const langCode = currentLanguage || locData.Language;
+  const langInfo = MICROSOFT_LANGUAGES.find((ml) => ml.code === langCode);
+  const languageDisplay = langInfo?.label || langCode;
+
+  currentPanel.webview.html = generateDialogHtml(
+    title,
+    body,
+    options,
+    hasFreeText,
+    languageDisplay,
+  );
+}
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -373,20 +466,6 @@ export function activate(context: vscode.ExtensionContext) {
   // This line of code will only be executed once when your extension is activated
   console.log(
     'Congratulations, your extension "vscode-purview-dlp-oversharing-dialogs" is now active!',
-  );
-
-  // The command has been defined in the package.json file
-  // Now provide the implementation of the command with registerCommand
-  // The commandId parameter must match the command field in package.json
-  const disposable = vscode.commands.registerCommand(
-    "vscode-purview-dlp-oversharing-dialogs.helloWorld",
-    () => {
-      // The code you place here will be executed every time your command is executed
-      // Display a message box to the user
-      vscode.window.showInformationMessage(
-        "Hello World from vscode-purview-dlp-oversharing-dialogs!",
-      );
-    },
   );
 
   const createTemplateDisposable = vscode.commands.registerCommand(
@@ -479,17 +558,14 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   // Test Dialog command - opens a webview preview with live auto-update
-  let currentPanel: vscode.WebviewPanel | undefined;
-  let currentLanguage: string | undefined;
-  let documentChangeListener: vscode.Disposable | undefined;
-  let debounceTimer: ReturnType<typeof setTimeout> | undefined;
-
   const testDialogDisposable = vscode.commands.registerCommand(
     "vscode-purview-dlp-oversharing-dialogs.testDialog",
     async () => {
       const editor = vscode.window.activeTextEditor;
       if (!editor) {
-        vscode.window.showErrorMessage("No active editor found. Please open a Purview DLP template file.");
+        vscode.window.showErrorMessage(
+          "No active editor found. Please open a Purview DLP template file.",
+        );
         return;
       }
 
@@ -498,13 +574,21 @@ export function activate(context: vscode.ExtensionContext) {
       try {
         template = JSON.parse(editor.document.getText());
       } catch {
-        vscode.window.showErrorMessage("Invalid JSON in the current file. Please fix syntax errors.");
+        vscode.window.showErrorMessage(
+          "Invalid JSON in the current file. Please fix syntax errors.",
+        );
         return;
       }
 
       // Validate template structure
-      if (!template.LocalizationData || !Array.isArray(template.LocalizationData) || template.LocalizationData.length === 0) {
-        vscode.window.showErrorMessage("Invalid template: LocalizationData array is required.");
+      if (
+        !template.LocalizationData ||
+        !Array.isArray(template.LocalizationData) ||
+        template.LocalizationData.length === 0
+      ) {
+        vscode.window.showErrorMessage(
+          "Invalid template: LocalizationData array is required.",
+        );
         return;
       }
 
@@ -512,13 +596,18 @@ export function activate(context: vscode.ExtensionContext) {
       let selectedLanguage: string;
       if (template.LocalizationData.length === 1) {
         selectedLanguage = template.LocalizationData[0].Language;
-      } else if (currentLanguage && template.LocalizationData.some(l => l.Language === currentLanguage)) {
+      } else if (
+        currentLanguage &&
+        template.LocalizationData.some((l) => l.Language === currentLanguage)
+      ) {
         // Use previously selected language if still available
         selectedLanguage = currentLanguage;
       } else {
         // Show QuickPick for language selection
-        const languageItems = template.LocalizationData.map(l => {
-          const langInfo = MICROSOFT_LANGUAGES.find(ml => ml.code === l.Language);
+        const languageItems = template.LocalizationData.map((l) => {
+          const langInfo = MICROSOFT_LANGUAGES.find(
+            (ml) => ml.code === l.Language,
+          );
           return {
             label: langInfo?.label || l.Language,
             description: l.Language,
@@ -528,13 +617,17 @@ export function activate(context: vscode.ExtensionContext) {
 
         // Sort to put default language first
         languageItems.sort((a, b) => {
-          if (a.isDefault) { return -1; }
-          if (b.isDefault) { return 1; }
+          if (a.isDefault) {
+            return -1;
+          }
+          if (b.isDefault) {
+            return 1;
+          }
           return 0;
         });
 
         const selected = await vscode.window.showQuickPick(
-          languageItems.map(item => ({
+          languageItems.map((item) => ({
             label: item.label + (item.isDefault ? " (Default)" : ""),
             description: item.description,
           })),
@@ -581,65 +674,6 @@ export function activate(context: vscode.ExtensionContext) {
         });
       }
 
-      // Function to update webview content
-      const updateWebview = () => {
-        if (!currentPanel) { return; }
-
-        const activeEditor = vscode.window.activeTextEditor;
-        if (!activeEditor) { return; }
-
-        let currentTemplate: PurviewDlpTemplate;
-        try {
-          currentTemplate = JSON.parse(activeEditor.document.getText());
-        } catch {
-          // Don't update on invalid JSON - keep showing last valid state
-          return;
-        }
-
-        if (!currentTemplate.LocalizationData || !Array.isArray(currentTemplate.LocalizationData)) {
-          return;
-        }
-
-        // Find localization data for selected language
-        let locData = currentTemplate.LocalizationData.find(l => l.Language === currentLanguage);
-        if (!locData) {
-          // Fall back to default language or first available
-          locData = currentTemplate.LocalizationData.find(l => l.Language === currentTemplate.DefaultLanguage)
-            || currentTemplate.LocalizationData[0];
-          if (locData) {
-            currentLanguage = locData.Language;
-          }
-        }
-
-        if (!locData) { return; }
-
-        // Get configuration values for token replacement
-        const config = vscode.workspace.getConfiguration("purviewDlp.testDialog");
-        const matchedRecipientsList = config.get<string>("matchedRecipientsList", "user@external.com");
-        const matchedLabelName = config.get<string>("matchedLabelName", "Confidential");
-        const matchedConditions = config.get<string>("matchedConditions", "Credit Card Number detected");
-
-        // Replace tokens in title and body
-        const replaceTokens = (text: string): string => {
-          return text
-            .replace(/%%MatchedRecipientsList%%/g, matchedRecipientsList)
-            .replace(/%%MatchedLabelName%%/g, matchedLabelName)
-            .replace(/%%MatchedConditions%%/g, matchedConditions);
-        };
-
-        const title = replaceTokens(locData.Title || "");
-        const body = replaceTokens(locData.Body || "");
-        const options = locData.Options || [];
-        const hasFreeText = currentTemplate.HasFreeTextOption;
-
-        // Get language display name
-        const langCode = currentLanguage || locData.Language;
-        const langInfo = MICROSOFT_LANGUAGES.find(ml => ml.code === langCode);
-        const languageDisplay = langInfo?.label || langCode;
-
-        currentPanel.webview.html = generateDialogHtml(title, body, options, hasFreeText, languageDisplay);
-      };
-
       // Initial update
       updateWebview();
 
@@ -648,23 +682,130 @@ export function activate(context: vscode.ExtensionContext) {
         documentChangeListener.dispose();
       }
 
-      documentChangeListener = vscode.workspace.onDidChangeTextDocument((event) => {
-        // Only update if the changed document is the active editor
-        const activeEditor = vscode.window.activeTextEditor;
-        if (!activeEditor || event.document !== activeEditor.document) {
-          return;
-        }
+      documentChangeListener = vscode.workspace.onDidChangeTextDocument(
+        (event) => {
+          // Only update if the changed document is the active editor
+          const activeEditor = vscode.window.activeTextEditor;
+          if (!activeEditor || event.document !== activeEditor.document) {
+            return;
+          }
 
-        // Debounce updates to avoid excessive re-renders
-        if (debounceTimer) {
-          clearTimeout(debounceTimer);
-        }
-        debounceTimer = setTimeout(() => {
-          updateWebview();
-        }, 300);
-      });
+          // Debounce updates to avoid excessive re-renders
+          if (debounceTimer) {
+            clearTimeout(debounceTimer);
+          }
+          debounceTimer = setTimeout(() => {
+            updateWebview();
+          }, 300);
+        },
+      );
 
       context.subscriptions.push(documentChangeListener);
+    },
+  );
+
+  // Switch Preview Language command - allows changing the preview language while panel is open
+  const switchPreviewLanguageDisposable = vscode.commands.registerCommand(
+    "vscode-purview-dlp-oversharing-dialogs.switchPreviewLanguage",
+    async () => {
+      // Check if preview panel is open
+      if (!currentPanel) {
+        vscode.window.showWarningMessage(
+          "No preview panel is open. Use 'Purview DLP: Preview Dialog' first to open a preview.",
+        );
+        return;
+      }
+
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) {
+        vscode.window.showErrorMessage(
+          "No active editor found. Please open a Purview DLP template file.",
+        );
+        return;
+      }
+
+      // Parse JSON content
+      let template: PurviewDlpTemplate;
+      try {
+        template = JSON.parse(editor.document.getText());
+      } catch {
+        vscode.window.showErrorMessage(
+          "Invalid JSON in the current file. Please fix syntax errors.",
+        );
+        return;
+      }
+
+      // Validate template structure
+      if (
+        !template.LocalizationData ||
+        !Array.isArray(template.LocalizationData) ||
+        template.LocalizationData.length === 0
+      ) {
+        vscode.window.showErrorMessage(
+          "Invalid template: LocalizationData array is required.",
+        );
+        return;
+      }
+
+      // Check if there's only one language
+      if (template.LocalizationData.length === 1) {
+        vscode.window.showInformationMessage(
+          "Only one language is available in this template.",
+        );
+        return;
+      }
+
+      // Build language selection items
+      const languageItems = template.LocalizationData.map((l) => {
+        const langInfo = MICROSOFT_LANGUAGES.find(
+          (ml) => ml.code === l.Language,
+        );
+        const isCurrent = l.Language === currentLanguage;
+        const isDefault = l.Language === template.DefaultLanguage;
+        let suffix = "";
+        if (isCurrent && isDefault) {
+          suffix = " (Current, Default)";
+        } else if (isCurrent) {
+          suffix = " (Current)";
+        } else if (isDefault) {
+          suffix = " (Default)";
+        }
+        return {
+          label: (langInfo?.label || l.Language) + suffix,
+          description: l.Language,
+          languageCode: l.Language,
+        };
+      });
+
+      // Sort to put current language first, then default
+      languageItems.sort((a, b) => {
+        if (a.languageCode === currentLanguage) {
+          return -1;
+        }
+        if (b.languageCode === currentLanguage) {
+          return 1;
+        }
+        if (a.languageCode === template.DefaultLanguage) {
+          return -1;
+        }
+        if (b.languageCode === template.DefaultLanguage) {
+          return 1;
+        }
+        return 0;
+      });
+
+      const selected = await vscode.window.showQuickPick(languageItems, {
+        placeHolder: "Select a language to preview",
+        title: "Switch Preview Language",
+      });
+
+      if (!selected) {
+        return; // User cancelled
+      }
+
+      // Update the current language and refresh the preview
+      currentLanguage = selected.languageCode;
+      updateWebview();
     },
   );
 
@@ -700,12 +841,14 @@ export function activate(context: vscode.ExtensionContext) {
             {
               label: "%%MatchedLabelName%%",
               detail: "Matched Label Name",
-              documentation: "Inserts the name of the sensitivity label that was matched",
+              documentation:
+                "Inserts the name of the sensitivity label that was matched",
             },
             {
               label: "%%MatchedConditions%%",
               detail: "Matched Conditions",
-              documentation: "Inserts the conditions that were matched by the DLP policy",
+              documentation:
+                "Inserts the conditions that were matched by the DLP policy",
             },
           ];
 
@@ -724,9 +867,9 @@ export function activate(context: vscode.ExtensionContext) {
       "%", // Trigger on % character
     );
 
-  context.subscriptions.push(disposable);
   context.subscriptions.push(createTemplateDisposable);
   context.subscriptions.push(testDialogDisposable);
+  context.subscriptions.push(switchPreviewLanguageDisposable);
   context.subscriptions.push(tokenCompletionProvider);
 }
 
