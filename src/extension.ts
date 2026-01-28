@@ -465,11 +465,11 @@ export function activate(context: vscode.ExtensionContext) {
   // Use the console to output diagnostic information (console.log) and errors (console.error)
   // This line of code will only be executed once when your extension is activated
   console.log(
-    'Congratulations, your extension "vscode-purview-dlp-oversharing-dialogs" is now active!',
+    'Congratulations, your extension "purview-dlp-oversharing-dialogs" is now active!',
   );
 
   const createTemplateDisposable = vscode.commands.registerCommand(
-    "vscode-purview-dlp-oversharing-dialogs.createTemplate",
+    "purview-dlp-oversharing-dialogs.createTemplate",
     async () => {
       // Step 1: Select languages (maximum 10 as per Purview limit)
       const selectedLanguages = await vscode.window.showQuickPick(
@@ -559,7 +559,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Test Dialog command - opens a webview preview with live auto-update
   const testDialogDisposable = vscode.commands.registerCommand(
-    "vscode-purview-dlp-oversharing-dialogs.testDialog",
+    "purview-dlp-oversharing-dialogs.testDialog",
     async () => {
       const editor = vscode.window.activeTextEditor;
       if (!editor) {
@@ -706,7 +706,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Switch Preview Language command - allows changing the preview language while panel is open
   const switchPreviewLanguageDisposable = vscode.commands.registerCommand(
-    "vscode-purview-dlp-oversharing-dialogs.switchPreviewLanguage",
+    "purview-dlp-oversharing-dialogs.switchPreviewLanguage",
     async () => {
       // Check if preview panel is open
       if (!currentPanel) {

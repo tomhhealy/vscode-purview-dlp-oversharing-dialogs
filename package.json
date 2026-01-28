@@ -1,9 +1,9 @@
 {
-  "name": "vscode-purview-dlp-oversharing-dialogs",
-  "displayName": "vscode-purview-dlp-oversharing-dialogs",
+  "name": "purview-dlp-oversharing-dialogs",
+  "displayName": "Purview DLP Oversharing Dialogs",
   "description": "An open-source & lightweight Visual Studio Code extension that assists with token & text formatting in JSON templates for Microsoft Purview oversharing dialogs.",
-  "version": "0.0.1",
-  "publisher": "Tom Healy",
+  "version": "1.0.0",
+  "publisher": "tomhhealy",
   "engines": {
     "vscode": "^1.108.1"
   },
@@ -15,15 +15,15 @@
   "contributes": {
     "commands": [
       {
-        "command": "vscode-purview-dlp-oversharing-dialogs.createTemplate",
+        "command": "purview-dlp-oversharing-dialogs.createTemplate",
         "title": "Purview DLP: Create oversharing dialog template"
       },
       {
-        "command": "vscode-purview-dlp-oversharing-dialogs.testDialog",
+        "command": "purview-dlp-oversharing-dialogs.testDialog",
         "title": "Purview DLP: Preview Dialog"
       },
       {
-        "command": "vscode-purview-dlp-oversharing-dialogs.switchPreviewLanguage",
+        "command": "purview-dlp-oversharing-dialogs.switchPreviewLanguage",
         "title": "Purview DLP: Switch Preview Language"
       }
     ],
