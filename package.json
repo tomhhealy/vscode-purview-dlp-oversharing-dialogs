@@ -20,8 +20,32 @@
       {
         "command": "vscode-purview-dlp-oversharing-dialogs.createTemplate",
         "title": "Purview DLP: Create oversharing dialog template"
+      },
+      {
+        "command": "vscode-purview-dlp-oversharing-dialogs.testDialog",
+        "title": "Purview DLP: Test Dialog"
       }
     ],
+    "configuration": {
+      "title": "Purview DLP Oversharing Dialogs",
+      "properties": {
+        "purviewDlp.testDialog.matchedRecipientsList": {
+          "type": "string",
+          "default": "user@external.com",
+          "description": "Placeholder value for %%MatchedRecipientsList%% token in dialog preview"
+        },
+        "purviewDlp.testDialog.matchedLabelName": {
+          "type": "string",
+          "default": "Confidential",
+          "description": "Placeholder value for %%MatchedLabelName%% token in dialog preview"
+        },
+        "purviewDlp.testDialog.matchedConditions": {
+          "type": "string",
+          "default": "Credit Card Number detected",
+          "description": "Placeholder value for %%MatchedConditions%% token in dialog preview"
+        }
+      }
+    },
     "languages": [
       {
         "id": "purview-dlp-json",
