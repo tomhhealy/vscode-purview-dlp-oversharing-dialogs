@@ -4,6 +4,11 @@
   "description": "An open-source & lightweight Visual Studio Code extension that assists with token & text formatting in JSON templates for Microsoft Purview's oversharing dialogs in Data Loss Prevention (DLP).",
   "version": "1.0.0",
   "publisher": "tomhhealy",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tomhhealy/vscode-purview-dlp-oversharing-dialogs.git"
+  },
+  "license": "MIT",
   "engines": {
     "vscode": "^1.108.1"
   },
