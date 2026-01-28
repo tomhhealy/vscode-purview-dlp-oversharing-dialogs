@@ -49,10 +49,10 @@
           "default": "Confidential",
           "description": "Placeholder value for %%MatchedLabelName%% token in dialog preview"
         },
-        "purviewDlp.testDialog.matchedConditions": {
+        "purviewDlp.testDialog.matchedAttachmentName": {
           "type": "string",
-          "default": "Credit Card Number detected",
-          "description": "Placeholder value for %%MatchedConditions%% token in dialog preview"
+          "default": "Financial_Report.xlsx",
+          "description": "Placeholder value for %%MatchedAttachmentName%% token in dialog preview"
         },
         "purviewDlp.enableTokenCompletion": {
           "type": "boolean",

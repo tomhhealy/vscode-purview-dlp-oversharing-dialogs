@@ -9,10 +9,10 @@
     "body": "%%MatchedLabelName%%",
     "description": "Inserts the name of the sensitivity label that was matched"
   },
-  "Matched Conditions Token": {
-    "prefix": "%%MatchedConditions",
-    "body": "%%MatchedConditions%%",
-    "description": "Inserts the conditions that were matched by the DLP policy"
+  "Matched Attachment Name Token": {
+    "prefix": "%%MatchedAttachmentName",
+    "body": "%%MatchedAttachmentName%%",
+    "description": "Displays matched attachments"
   },
   "All Tokens": {
     "prefix": "%%tokens",
@@ -20,8 +20,33 @@
       "Available tokens:",
       "- %%MatchedRecipientsList%%",
       "- %%MatchedLabelName%%",
-      "- %%MatchedConditions%%"
+      "- %%MatchedAttachmentName%%"
     ],
     "description": "Shows all available dynamic tokens"
+  },
+  "Bold Text": {
+    "prefix": "<Bold",
+    "body": "<Bold>$1</Bold>$0",
+    "description": "Makes the enclosed text bold (Body field only)"
+  },
+  "Italic Text": {
+    "prefix": "<Italic",
+    "body": "<Italic>$1</Italic>$0",
+    "description": "Makes the enclosed text italic (Body field only)"
+  },
+  "Underline Text": {
+    "prefix": "<Underline",
+    "body": "<Underline>$1</Underline>$0",
+    "description": "Underlines the enclosed text (Body field only)"
+  },
+  "Line Break": {
+    "prefix": "<LineBreak",
+    "body": "<LineBreak />",
+    "description": "Inserts a line break (Body field only)"
+  },
+  "Line Break (br)": {
+    "prefix": "<br",
+    "body": "<br />",
+    "description": "Inserts a line break - alternative syntax (Body field only)"
   }
 }

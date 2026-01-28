@@ -69,6 +69,9 @@ function generateDialogHtml(
   options: string[],
   hasFreeText: boolean,
   languageDisplay: string,
+  titleLength: number,
+  bodyLength: number,
+  optionsClassLength: number,
 ): string {
   // Escape HTML to prevent XSS
   const escapeHtml = (text: string): string => {
@@ -80,13 +83,45 @@ function generateDialogHtml(
       .replace(/'/g, "&#039;");
   };
 
-  // Convert newlines to <br> for display
-  const formatText = (text: string): string => {
-    return escapeHtml(text).replace(/\n/g, "<br>");
+  // Format text for Title (no formatting tags, just escape)
+  const formatTitle = (text: string): string => {
+    return escapeHtml(text);
   };
 
-  // Generate radio button options
-  const optionsHtml = options
+  // Format text for Body (supports formatting tags)
+  const formatBody = (text: string): string => {
+    // First escape all HTML
+    let formatted = escapeHtml(text);
+
+    // Convert formatting tags (which are now escaped) to actual HTML
+    // Bold: <Bold>text</Bold>
+    formatted = formatted.replace(
+      /&lt;Bold&gt;(.*?)&lt;\/Bold&gt;/gi,
+      "<strong>$1</strong>",
+    );
+
+    // Underline: <Underline>text</Underline>
+    formatted = formatted.replace(
+      /&lt;Underline&gt;(.*?)&lt;\/Underline&gt;/gi,
+      "<u>$1</u>",
+    );
+
+    // Italic: <Italic>text</Italic>
+    formatted = formatted.replace(
+      /&lt;Italic&gt;(.*?)&lt;\/Italic&gt;/gi,
+      "<em>$1</em>",
+    );
+
+    // Line breaks: <LineBreak /> or <br> or <br />
+    formatted = formatted.replace(/&lt;LineBreak\s*\/&gt;/gi, "<br>");
+    formatted = formatted.replace(/&lt;br\s*\/?&gt;/gi, "<br>");
+
+    return formatted;
+  };
+
+  // Generate radio button options (only show first 3)
+  const optionsToDisplay = options.slice(0, 3);
+  const optionsHtml = optionsToDisplay
     .map(
       (option, index) => `
       <div class="option-item">
@@ -106,6 +141,14 @@ function generateDialogHtml(
     </div>
   `
     : "";
+
+  // Calculate stat classes based on limits
+  const titleClass =
+    titleLength > 75 ? "error" : titleLength > 60 ? "warning" : "";
+  const bodyClass =
+    bodyLength > 800 ? "error" : bodyLength > 640 ? "warning" : "";
+  const optionsClass = options.length > 3 ? "error" : "";
+  const optionsItemClass = optionsClassLength > 100 ? "error" : optionsClassLength > 80 ? "warning" : "";
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -138,7 +181,44 @@ function generateDialogHtml(
       padding: 4px 12px;
       border-radius: 4px;
       font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .stats-badge {
+      background-color: #f5f5f5;
+      border: 1px solid #d1d1d1;
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-size: 11px;
       margin-bottom: 16px;
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .stat-label {
+      color: #666;
+      font-weight: 500;
+    }
+
+    .stat-value {
+      color: #333;
+      font-weight: 600;
+    }
+
+    .stat-value.warning {
+      color: #f59e0b;
+    }
+
+    .stat-value.error {
+      color: #ef4444;
     }
 
     .dialog-frame {
@@ -219,11 +299,40 @@ function generateDialogHtml(
       line-height: 1.4;
     }
 
+    .dialog-title strong,
+    .dialog-title b {
+      font-weight: 700;
+    }
+
+    .dialog-title em,
+    .dialog-title i {
+      font-style: italic;
+    }
+
+    .dialog-title u {
+      text-decoration: underline;
+    }
+
     .dialog-body {
       color: #444;
       line-height: 1.5;
       margin-bottom: 20px;
       padding-left: 48px;
+    }
+
+    .dialog-body strong,
+    .dialog-body b {
+      font-weight: 600;
+      color: #333;
+    }
+
+    .dialog-body em,
+    .dialog-body i {
+      font-style: italic;
+    }
+
+    .dialog-body u {
+      text-decoration: underline;
     }
 
     .options-section {
@@ -318,6 +427,25 @@ function generateDialogHtml(
 <body>
   <div class="language-badge">Preview: ${escapeHtml(languageDisplay)}</div>
 
+  <div class="stats-badge">
+    <div class="stat-item">
+      <span class="stat-label">Title:</span>
+      <span class="stat-value ${titleClass}">${titleLength}/75</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">Body:</span>
+      <span class="stat-value ${bodyClass}">${bodyLength}/800</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">Options:</span>
+      <span class="stat-value ${optionsClass}">${options.length}/3</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">Longest Option:</span>
+      <span class="stat-value ${optionsItemClass}">${optionsClassLength}/100</span>
+    </div>
+  </div>
+
   <div class="dialog-frame">
     <div class="title-bar">
       <span class="title-bar-text">Microsoft Outlook</span>
@@ -336,11 +464,11 @@ function generateDialogHtml(
             <text x="16" y="24" text-anchor="middle" font-size="16" font-weight="bold" fill="#333">!</text>
           </svg>
         </div>
-        <div class="dialog-title">${title ? formatText(title) : '<span class="empty-state">(No title)</span>'}</div>
+        <div class="dialog-title">${title ? formatTitle(title) : '<span class="empty-state">(No title)</span>'}</div>
       </div>
 
       <div class="dialog-body">
-        ${body ? formatText(body) : '<span class="empty-state">(No body text)</span>'}
+        ${body ? formatBody(body) : '<span class="empty-state">(No body text)</span>'}
       </div>
 
       ${
@@ -371,6 +499,150 @@ let currentPanel: vscode.WebviewPanel | undefined;
 let currentLanguage: string | undefined;
 let documentChangeListener: vscode.Disposable | undefined;
 let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+
+// Diagnostics collection for validation
+let diagnosticCollection: vscode.DiagnosticCollection;
+
+// Validate document and create diagnostics for field length violations
+function validateDocument(document: vscode.TextDocument): void {
+  if (!diagnosticCollection) {
+    return;
+  }
+
+  const diagnostics: vscode.Diagnostic[] = [];
+  const text = document.getText();
+
+  // Only validate purview-dlp-json files
+  if (document.languageId !== "purview-dlp-json") {
+    diagnosticCollection.set(document.uri, []);
+    return;
+  }
+
+  try {
+    const template: PurviewDlpTemplate = JSON.parse(text);
+
+    if (
+      !template.LocalizationData ||
+      !Array.isArray(template.LocalizationData)
+    ) {
+      diagnosticCollection.set(document.uri, []);
+      return;
+    }
+
+    // Parse the JSON to find line positions
+    const lines = text.split("\n");
+
+    // Track which LocalizationData item we're in
+    let inLocalizationData = false;
+    let locDataIndex = -1;
+    let currentProperty = "";
+
+    for (let lineNum = 0; lineNum < lines.length; lineNum++) {
+      const line = lines[lineNum];
+
+      // Check if we're entering LocalizationData array
+      if (line.includes('"LocalizationData"')) {
+        inLocalizationData = true;
+        locDataIndex = -1;
+        continue;
+      }
+
+      // Check if we found an object start in LocalizationData
+      if (inLocalizationData && line.trim() === "{") {
+        locDataIndex++;
+        continue;
+      }
+
+      // Check if we're leaving LocalizationData
+      if (inLocalizationData && line.includes("]") && !line.includes("[")) {
+        inLocalizationData = false;
+        continue;
+      }
+
+      if (inLocalizationData && locDataIndex >= 0) {
+        const locData = template.LocalizationData[locDataIndex];
+        if (!locData) {
+          continue;
+        }
+
+        // Check for Title property
+        if (line.includes('"Title"')) {
+          currentProperty = "Title";
+          const titleLength = locData.Title.length;
+          if (titleLength > 75) {
+            const range = new vscode.Range(lineNum, 0, lineNum, line.length);
+            const diagnostic = new vscode.Diagnostic(
+              range,
+              `Title exceeds 75 character limit (current: ${titleLength} characters)`,
+              vscode.DiagnosticSeverity.Error,
+            );
+            diagnostic.code = "title-too-long";
+            diagnostics.push(diagnostic);
+          }
+        }
+
+        // Check for Body property
+        if (line.includes('"Body"')) {
+          currentProperty = "Body";
+          const bodyLength = locData.Body.length;
+          if (bodyLength > 800) {
+            const range = new vscode.Range(lineNum, 0, lineNum, line.length);
+            const diagnostic = new vscode.Diagnostic(
+              range,
+              `Body exceeds 800 character limit (current: ${bodyLength} characters)`,
+              vscode.DiagnosticSeverity.Error,
+            );
+            diagnostic.code = "body-too-long";
+            diagnostics.push(diagnostic);
+          }
+        }
+
+        // Check for Options property
+        if (line.includes('"Options"')) {
+          currentProperty = "Options";
+          const optionsLength = locData.Options?.length || 0;
+          if (optionsLength > 3) {
+            const range = new vscode.Range(lineNum, 0, lineNum, line.length);
+            const diagnostic = new vscode.Diagnostic(
+              range,
+              `Options array exceeds maximum of 3 items (current: ${optionsLength} options)`,
+              vscode.DiagnosticSeverity.Error,
+            );
+            diagnostic.code = "too-many-options";
+            diagnostics.push(diagnostic);
+          }
+
+          // Check individual option lengths
+          if (locData.Options && Array.isArray(locData.Options)) {
+            locData.Options.forEach((option, optIndex) => {
+              if (option.length > 100) {
+                // Find the line with this specific option
+                for (let i = lineNum + 1; i < lines.length; i++) {
+                  const optLine = lines[i];
+                  if (optLine.includes(option.substring(0, 20))) {
+                    const range = new vscode.Range(i, 0, i, optLine.length);
+                    const diagnostic = new vscode.Diagnostic(
+                      range,
+                      `Option ${optIndex + 1} exceeds 100 character limit (current: ${option.length} characters)`,
+                      vscode.DiagnosticSeverity.Error,
+                    );
+                    diagnostic.code = "option-too-long";
+                    diagnostics.push(diagnostic);
+                    break;
+                  }
+                }
+              }
+            });
+          }
+        }
+      }
+    }
+  } catch (error) {
+    // Invalid JSON - don't add diagnostics, JSON validation will handle it
+  }
+
+  diagnosticCollection.set(document.uri, diagnostics);
+}
 
 // Function to update webview content - defined at module level for access by multiple commands
 function updateWebview(): void {
@@ -427,9 +699,9 @@ function updateWebview(): void {
     "matchedLabelName",
     "Confidential",
   );
-  const matchedConditions = config.get<string>(
-    "matchedConditions",
-    "Credit Card Number detected",
+  const matchedAttachmentName = config.get<string>(
+    "matchedAttachmentName",
+    "Financial_Report.xlsx",
   );
 
   // Replace tokens in title and body
@@ -437,13 +709,20 @@ function updateWebview(): void {
     return text
       .replace(/%%MatchedRecipientsList%%/g, matchedRecipientsList)
       .replace(/%%MatchedLabelName%%/g, matchedLabelName)
-      .replace(/%%MatchedConditions%%/g, matchedConditions);
+      .replace(/%%MatchedAttachmentName%%/g, matchedAttachmentName);
   };
 
   const title = replaceTokens(locData.Title || "");
   const body = replaceTokens(locData.Body || "");
   const options = locData.Options || [];
   const hasFreeText = currentTemplate.HasFreeTextOption;
+
+  // Get original lengths (before token replacement) for character count display
+  const titleLength = locData.Title?.length || 0;
+  const bodyLength = locData.Body?.length || 0;
+  const optionsClassLength = options.length > 0
+    ? Math.max(...options.map(opt => opt.length))
+    : 0;
 
   // Get language display name
   const langCode = currentLanguage || locData.Language;
@@ -456,6 +735,9 @@ function updateWebview(): void {
     options,
     hasFreeText,
     languageDisplay,
+    titleLength,
+    bodyLength,
+    optionsClassLength,
   );
 }
 
@@ -466,6 +748,43 @@ export function activate(context: vscode.ExtensionContext) {
   // This line of code will only be executed once when your extension is activated
   console.log(
     'Congratulations, your extension "purview-dlp-oversharing-dialogs" is now active!',
+  );
+
+  // Initialize diagnostics collection
+  diagnosticCollection =
+    vscode.languages.createDiagnosticCollection("purview-dlp");
+  context.subscriptions.push(diagnosticCollection);
+
+  // Validate all open documents on activation
+  vscode.workspace.textDocuments.forEach((document) => {
+    if (document.languageId === "purview-dlp-json") {
+      validateDocument(document);
+    }
+  });
+
+  // Listen for document changes
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeTextDocument((event) => {
+      if (event.document.languageId === "purview-dlp-json") {
+        validateDocument(event.document);
+      }
+    }),
+  );
+
+  // Listen for document opens
+  context.subscriptions.push(
+    vscode.workspace.onDidOpenTextDocument((document) => {
+      if (document.languageId === "purview-dlp-json") {
+        validateDocument(document);
+      }
+    }),
+  );
+
+  // Listen for document closes to clear diagnostics
+  context.subscriptions.push(
+    vscode.workspace.onDidCloseTextDocument((document) => {
+      diagnosticCollection.delete(document.uri);
+    }),
   );
 
   const createTemplateDisposable = vscode.commands.registerCommand(
@@ -536,7 +855,7 @@ export function activate(context: vscode.ExtensionContext) {
           Language: lang.description,
           Title: "",
           Body: "",
-          Options: ["Option 1", "Option 2"],
+          Options: ["Option 1", "Option 2", "Option 3"],
         })),
         HasFreeTextOption: true,
         DefaultLanguage: defaultLanguageCode,
@@ -850,13 +1169,13 @@ export function activate(context: vscode.ExtensionContext) {
               label: "%%MatchedLabelName%%",
               detail: "Matched Label Name",
               documentation:
-                "Inserts the name of the sensitivity label that was matched",
+                "Inserts the name of the sensitivity label that was matched. Supported condition: Content contains sensitivity label",
             },
             {
-              label: "%%MatchedConditions%%",
-              detail: "Matched Conditions",
+              label: "%%MatchedAttachmentName%%",
+              detail: "Matched Attachment Name",
               documentation:
-                "Inserts the conditions that were matched by the DLP policy",
+                "Displays matched attachments. Supported conditions: Content contains sensitive information, Content contains sensitivity label, Attachment is not labeled, File extension is",
             },
           ];
 
@@ -873,6 +1192,105 @@ export function activate(context: vscode.ExtensionContext) {
         },
       },
       "%", // Trigger on % character
+    );
+
+  // Register completion provider for formatting tags
+  const formattingCompletionProvider =
+    vscode.languages.registerCompletionItemProvider(
+      "purview-dlp-json",
+      {
+        provideCompletionItems(
+          document: vscode.TextDocument,
+          position: vscode.Position,
+        ) {
+          // Check if token completion is enabled
+          const enabled = vscode.workspace
+            .getConfiguration("purviewDlp")
+            .get<boolean>("enableTokenCompletion", true);
+          if (!enabled) {
+            return undefined;
+          }
+
+          // Check if we're typing after <
+          const linePrefix = document
+            .lineAt(position)
+            .text.slice(0, position.character);
+          if (!linePrefix.endsWith("<")) {
+            return undefined;
+          }
+
+          // Check if we're inside a Body string value (formatting only supported in Body)
+          const line = document.lineAt(position).text;
+          if (!line.includes('"Body"')) {
+            // Look at previous lines to see if we're in a Body multi-line string
+            let inBody = false;
+            for (let i = position.line - 1; i >= 0; i--) {
+              const prevLine = document.lineAt(i).text;
+              if (prevLine.includes('"Body"')) {
+                inBody = true;
+                break;
+              }
+              if (
+                prevLine.includes('"Title"') ||
+                prevLine.includes('"Options"') ||
+                prevLine.includes("}") ||
+                prevLine.includes("]")
+              ) {
+                break;
+              }
+            }
+            if (!inBody) {
+              return undefined;
+            }
+          }
+
+          // Create completion items for formatting tags
+          const tags = [
+            {
+              label: "Bold",
+              insertText: "Bold>${1:text}</Bold>",
+              detail: "Bold text (Body only)",
+              documentation: "Makes the enclosed text bold. Note: Formatting tags are only supported in the Body field.",
+            },
+            {
+              label: "Italic",
+              insertText: "Italic>${1:text}</Italic>",
+              detail: "Italic text (Body only)",
+              documentation: "Makes the enclosed text italic. Note: Formatting tags are only supported in the Body field.",
+            },
+            {
+              label: "Underline",
+              insertText: "Underline>${1:text}</Underline>",
+              detail: "Underlined text (Body only)",
+              documentation: "Underlines the enclosed text. Note: Formatting tags are only supported in the Body field.",
+            },
+            {
+              label: "LineBreak",
+              insertText: "LineBreak />",
+              detail: "Line break (Body only)",
+              documentation: "Inserts a line break. Note: Formatting tags are only supported in the Body field.",
+            },
+            {
+              label: "br",
+              insertText: "br />",
+              detail: "Line break alternative (Body only)",
+              documentation: "Inserts a line break (alternative syntax). Note: Formatting tags are only supported in the Body field.",
+            },
+          ];
+
+          return tags.map((tag) => {
+            const item = new vscode.CompletionItem(
+              tag.label,
+              vscode.CompletionItemKind.Snippet,
+            );
+            item.detail = tag.detail;
+            item.documentation = new vscode.MarkdownString(tag.documentation);
+            item.insertText = new vscode.SnippetString(tag.insertText);
+            return item;
+          });
+        },
+      },
+      "<", // Trigger on < character
     );
 
   // Toggle Token Auto-Completion command
@@ -897,6 +1315,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(switchPreviewLanguageDisposable);
   context.subscriptions.push(toggleTokenCompletionDisposable);
   context.subscriptions.push(tokenCompletionProvider);
+  context.subscriptions.push(formattingCompletionProvider);
 }
 
 // This method is called when your extension is deactivated

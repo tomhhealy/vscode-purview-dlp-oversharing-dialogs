@@ -25,17 +25,21 @@
           },
           "Title": {
             "type": "string",
-            "description": "Dialog title. Supports tokens: %%MatchedRecipientsList%%, %%MatchedLabelName%%, %%MatchedConditions%%"
+            "description": "Dialog title. Supports tokens: %%MatchedRecipientsList%%, %%MatchedLabelName%%, %%MatchedAttachmentName%%",
+            "maxLength": 75
           },
           "Body": {
             "type": "string",
-            "description": "Dialog body text. Supports tokens: %%MatchedRecipientsList%%, %%MatchedLabelName%%, %%MatchedConditions%%"
+            "description": "Dialog body text. Supports tokens: %%MatchedRecipientsList%%, %%MatchedLabelName%%, %%MatchedAttachmentName%%. Formatting tags (Body only): <Bold></Bold>, <Italic></Italic>, <Underline></Underline>, <LineBreak /> or <br>",
+            "maxLength": 800
           },
           "Options": {
             "type": "array",
-            "description": "Array of option buttons displayed to the user",
+            "description": "Array of option buttons displayed to the user (maximum 3 custom options, each max 100 characters)",
+            "maxItems": 3,
             "items": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 100
             }
           }
         },
