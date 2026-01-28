@@ -1,7 +1,7 @@
 {
   "Matched Recipients List Token": {
     "prefix": "%%MatchedRecipientsList",
-    "body": "%%MatchedConditions%%",
+    "body": "%%MatchedRecipientsList%%",
     "description": "Display the matched recipients for a given DLP rule for these conditions:\n- Recipient is\n- Recipient domain is\n- Recipient is a member of\n- Content is shared from Microsoft 365"
   },
   "Matched Label Name Token": {

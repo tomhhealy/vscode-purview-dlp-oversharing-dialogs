@@ -44,6 +44,11 @@
           "type": "string",
           "default": "Credit Card Number detected",
           "description": "Placeholder value for %%MatchedConditions%% token in dialog preview"
+        },
+        "purviewDlp.enableTokenCompletion": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable token auto-completion when typing `%%` in JSON template files files. Disable/Enable this setting when required to avoid it interfering with other JSON files."
         }
       }
     },
@@ -86,7 +91,8 @@
     "watch": "tsc -watch -p ./",
     "pretest": "pnpm run compile && pnpm run lint",
     "lint": "eslint src",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "package": "vsce package -o dist/"
   },
   "devDependencies": {
     "@types/vscode": "^1.108.1",

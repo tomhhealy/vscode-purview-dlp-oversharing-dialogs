@@ -818,6 +818,14 @@ export function activate(context: vscode.ExtensionContext) {
           document: vscode.TextDocument,
           position: vscode.Position,
         ) {
+          // Check if token completion is enabled
+          const enabled = vscode.workspace
+            .getConfiguration("purviewDlp")
+            .get<boolean>("enableTokenCompletion", true);
+          if (!enabled) {
+            return undefined;
+          }
+
           // Check if we're typing after %%
           const linePrefix = document
             .lineAt(position)
